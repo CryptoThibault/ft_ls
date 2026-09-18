@@ -7,7 +7,11 @@ SRC_DIR := src
 INC_DIR := include
 OBJ_DIR := obj
 
-SRCS := $(SRC_DIR)/main.c
+SRCS := $(SRC_DIR)/main.c \
+	$(SRC_DIR)/read_entries.c \
+	$(SRC_DIR)/store_entries.c \
+	$(SRC_DIR)/sort_entries.c \
+	$(SRC_DIR)/print_entries.c
 OBJS := $(SRCS:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 
 all: $(NAME)
@@ -15,7 +19,7 @@ all: $(NAME)
 $(NAME): $(OBJS)
 	$(CC) $(CFLAGS) $(OBJS) -o $(NAME)
 
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c $(INC_DIR)/ft_ls.h
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -I$(INC_DIR) -c $< -o $@
 
