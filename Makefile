@@ -8,6 +8,13 @@ INC_DIR := include
 OBJ_DIR := obj
 
 SRCS := $(SRC_DIR)/main.c \
+	$(SRC_DIR)/parse_args.c \
+	$(SRC_DIR)/list_paths.c \
+	$(SRC_DIR)/entry_path.c \
+	$(SRC_DIR)/file_mode.c \
+	$(SRC_DIR)/format_fields.c \
+	$(SRC_DIR)/measure_entries.c \
+	$(SRC_DIR)/print_long.c \
 	$(SRC_DIR)/read_entries.c \
 	$(SRC_DIR)/store_entries.c \
 	$(SRC_DIR)/sort_entries.c \
