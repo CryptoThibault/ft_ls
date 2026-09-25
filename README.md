@@ -38,7 +38,13 @@ Arguments may contain files and directories, with options before or after paths.
 as `-la`, `-al` or separate arguments. Repeated options are accepted. `--` ends option
 parsing, so `./ft_ls -l -- -example` lists a name beginning with a dash. Without
 paths, the program uses `.`. Unsupported options (including the planned
-`-r`, `-t` and `-R`) produce an error before any listing.
+`-r` and `-t`) produce an error before any listing.
+
+`-R` lists each directory before recursively visiting its subdirectories in sorted
+order. It combines with `-a` and `-l` (for example `-laR`). Each directory gets a
+path heading; `-l` also prints its own total and aligned columns. Hidden directories
+are visited only with `-a`. The entries `.` and `..` are displayed with `-a` but
+never traversed. Symbolic links found inside directories are never followed.
 
 File operands are displayed before directory contents; both groups are sorted.
 Multiple paths enable directory headings. With `-l`, symbolic-link operands are
@@ -48,6 +54,7 @@ prevent processing other valid paths and produce a nonzero exit status.
 ```sh
 ./ft_ls -l
 ./ft_ls -l src Makefile
+./ft_ls -laR src
 ./ft_ls src -l
 ./ft_ls -l -- -example
 ```
@@ -62,6 +69,7 @@ the locale's abbreviated month, day and time (or year for old or future dates).
   frees arguments and checks output errors.
 - `src/parse_args.c` validates options and collects path operands.
 - `src/list_paths.c` separates files and directories and coordinates each listing.
+- `src/list_directory.c` displays directories and performs recursive traversal.
 - `src/read_entries.c` opens, reads and closes a directory and filters hidden
   entries.
 - `src/store_entries.c` grows the entry array, copies names and frees storage.
@@ -76,8 +84,11 @@ the locale's abbreviated month, day and time (or year for old or future dates).
 - `include/ft_ls.h` declares the shared interfaces and the `t_options` structure,
   with fields for `-a`, `-l`, `-R`, `-r` and `-t`.
 
-Each source file owns one focused feature. Recursive traversal will get its own
-file when implemented. Directory reading accepts a path and shared options.
+Each source file owns one focused feature. Directory traversal uses depth-first
+recursion and closes each directory stream before descending. Active ancestor
+device/inode pairs detect directory cycles without suppressing repeated operands.
+Unreadable directories are reported and skipped while other directories continue.
+Directory reading accepts a path and shared options.
 Names are copied because `readdir` may reuse its storage on the next call. The
 array grows geometrically; its caller frees it even when reading fails.
 

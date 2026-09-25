@@ -17,7 +17,8 @@ char	*entry_path(const char *directory, const char *name)
 	if (length)
 	{
 		memcpy(path, directory, length);
-		path[length++] = '/';
+		if (path[length - 1] != '/')
+			path[length++] = '/';
 	}
 	strcpy(path + length, name);
 	return (path);

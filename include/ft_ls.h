@@ -39,6 +39,8 @@ int	add_entry(t_entries *entries, const char *name);
 void	free_entries(t_entries *entries);
 void	sort_entries(t_entries *entries);
 int	parse_args(int argc, char **argv, t_options *options, t_entries *paths);
+int	list_directory(const char *path, const t_options *options,
+		bool heading, bool *printed);
 int	list_paths(t_entries *paths, const t_options *options);
 char	*entry_path(const char *directory, const char *name);
 void	file_mode(mode_t mode, char text[11]);

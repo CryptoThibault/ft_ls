@@ -32,29 +32,14 @@ static int	classify_paths(const t_entries *paths, const t_options *options,
 	return (status);
 }
 
-static int	list_directory(const char *path, const t_options *options)
-{
-	t_entries	entries;
-	int			status;
-
-	entries = (t_entries){0};
-	status = read_entries(path, options, &entries);
-	sort_entries(&entries);
-	if (options->long_format && status == 0
-		&& print_total(&entries, path) != 0)
-		status = 1;
-	if (print_entries(&entries, path, options) != 0)
-		status = 1;
-	free_entries(&entries);
-	return (status);
-}
-
 int	list_paths(t_entries *paths, const t_options *options)
 {
 	t_entries	files;
 	t_entries	directories;
 	size_t		i;
 	int			status;
+	int			directory_status;
+	bool		printed;
 
 	files = (t_entries){0};
 	directories = (t_entries){0};
@@ -63,14 +48,13 @@ int	list_paths(t_entries *paths, const t_options *options)
 	if (print_entries(&files, NULL, options) != 0 && status == 0)
 		status = 1;
 	i = 0;
+	printed = files.count > 0;
 	while (i < directories.count)
 	{
-		if (i > 0 || files.count > 0)
-			putchar('\n');
-		if (paths->count > 1)
-			printf("%s:\n", directories.names[i]);
-		if (list_directory(directories.names[i], options) != 0 && status == 0)
-			status = 1;
+		directory_status = list_directory(directories.names[i], options,
+				paths->count > 1 || options->recursive, &printed);
+		if (directory_status > status)
+			status = directory_status;
 		i++;
 	}
 	free_entries(&files);

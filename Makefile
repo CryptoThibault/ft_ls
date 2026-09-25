@@ -10,6 +10,7 @@ OBJ_DIR := obj
 SRCS := $(SRC_DIR)/main.c \
 	$(SRC_DIR)/parse_args.c \
 	$(SRC_DIR)/list_paths.c \
+	$(SRC_DIR)/list_directory.c \
 	$(SRC_DIR)/entry_path.c \
 	$(SRC_DIR)/file_mode.c \
 	$(SRC_DIR)/format_fields.c \

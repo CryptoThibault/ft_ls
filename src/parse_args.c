@@ -21,6 +21,8 @@ int	parse_args(int argc, char **argv, t_options *options, t_entries *paths)
 			{
 				if (argv[i][j] == 'l')
 					options->long_format = true;
+				else if (argv[i][j] == 'R')
+					options->recursive = true;
 				else if (argv[i][j] == 'a')
 					options->show_all = true;
 				else
