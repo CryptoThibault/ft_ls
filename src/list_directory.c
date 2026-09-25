@@ -1,6 +1,5 @@
 #include "ft_ls.h"
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 typedef struct s_ancestor
@@ -13,43 +12,23 @@ typedef struct s_ancestor
 static int	walk_directory(const char *path, const t_options *options,
 		const t_ancestor *parent, bool heading, bool *printed);
 
-static int	visit_child(const char *path, const t_options *options,
-		const t_ancestor *parent, bool *printed)
-{
-	struct stat	info;
-
-	if (lstat(path, &info) == -1)
-		return (perror(path), 1);
-	if (!S_ISDIR(info.st_mode))
-		return (0);
-	return (walk_directory(path, options, parent, true, printed));
-}
-
-static int	visit_children(const char *path, const t_entries *entries,
+static int	visit_children(const t_entries *entries,
 		const t_options *options, const t_ancestor *parent, bool *printed)
 {
-	size_t	i;
-	char	*child;
-	int		status;
+	size_t			i;
+	const t_entry	*entry;
+	int				status;
 
 	i = 0;
 	status = 0;
-	while (i < entries->count)
+	while (i < entries->count && !ferror(stdout))
 	{
-		if (strcmp(entries->names[i], ".") == 0
-			|| strcmp(entries->names[i], "..") == 0)
-		{
-			i++;
+		entry = &entries->items[i++];
+		if (!entry->valid || !S_ISDIR(entry->info.st_mode)
+			|| strcmp(entry->name, ".") == 0 || strcmp(entry->name, "..") == 0)
 			continue ;
-		}
-		child = entry_path(path, entries->names[i++]);
-		if (child == NULL)
-			return (perror("ft_ls: path allocation"), 1);
-		if (visit_child(child, options, parent, printed) != 0)
+		if (walk_directory(entry->path, options, parent, true, printed) != 0)
 			status = 1;
-		free(child);
-		if (ferror(stdout))
-			break ;
 	}
 	return (status);
 }
@@ -97,14 +76,15 @@ static int	walk_directory(const char *path, const t_options *options,
 	if (heading)
 		printf("%s:\n", path);
 	*printed = true;
-	sort_entries(&entries);
-	if (options->long_format && status == 0
-		&& print_total(&entries, path) != 0)
+	status = load_entries(&entries, path, options);
+	sort_entries(&entries, options);
+	if (options->long_format
+		&& print_total(&entries) != 0)
 		status = 1;
-	if (print_entries(&entries, path, options) != 0 && status == 0)
+	if (print_entries(&entries, options) != 0 && status == 0)
 		status = 1;
 	if (options->recursive && !ferror(stdout)
-		&& visit_children(path, &entries, options, &current, printed) != 0 && status == 0)
+		&& visit_children(&entries, options, &current, printed) != 0 && status == 0)
 		status = 1;
 	free_entries(&entries);
 	return (status);

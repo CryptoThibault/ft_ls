@@ -37,14 +37,24 @@ Arguments may contain files and directories, with options before or after paths.
 `-a` includes all hidden entries, including `.` and `..`. It combines with `-l`
 as `-la`, `-al` or separate arguments. Repeated options are accepted. `--` ends option
 parsing, so `./ft_ls -l -- -example` lists a name beginning with a dash. Without
-paths, the program uses `.`. Unsupported options (including the planned
-`-r` and `-t`) produce an error before any listing.
+paths, the program uses `.`. Unsupported options produce an error before any listing.
 
 `-R` lists each directory before recursively visiting its subdirectories in sorted
 order. It combines with `-a` and `-l` (for example `-laR`). Each directory gets a
 path heading; `-l` also prints its own total and aligned columns. Hidden directories
 are visited only with `-a`. The entries `.` and `..` are displayed with `-a` but
 never traversed. Symbolic links found inside directories are never followed.
+
+`-r` reverses the sorted order of entries and path operands. Files still appear
+before directories; each group is reversed independently. With `-R`, subdirectories
+are visited in reverse order too. Repeated `-r` keeps reverse sorting enabled.
+
+`-t` sorts by modification time, newest first, including nanoseconds. Equal
+timestamps are ordered by name using the active locale. `-tr` reverses the whole
+order (oldest first, with reversed name ordering for ties). Recursive traversal
+uses the same ordering. Sorting reuses cached metadata and performs no filesystem calls. Directory entries use
+`lstat`; command-line links to directories use the target's time when traversed
+without `-l`.
 
 File operands are displayed before directory contents; both groups are sorted.
 Multiple paths enable directory headings. With `-l`, symbolic-link operands are
@@ -72,9 +82,11 @@ the locale's abbreviated month, day and time (or year for old or future dates).
 - `src/list_directory.c` displays directories and performs recursive traversal.
 - `src/read_entries.c` opens, reads and closes a directory and filters hidden
   entries.
-- `src/store_entries.c` grows the entry array, copies names and frees storage.
-- `src/sort_entries.c` sorts names with `strcoll`, falling back to `strcmp` for
-  names that compare equally under the active locale.
+- `src/store_entries.c` owns entry storage, grows arrays, transfers entries and
+  frees their names and paths.
+- `src/load_entries.c` loads metadata once and applies operand symlink rules.
+- `src/sort_entries.c` sorts cached entries by name or timestamp, uses locale-aware
+  name comparison for ties, and applies reverse ordering.
 - `src/entry_path.c` constructs paths for directory entries.
 - `src/print_entries.c` selects simple or long display and computes directory totals.
 - `src/print_long.c` displays metadata, resolves owner/group names and reads links.
@@ -92,10 +104,30 @@ Directory reading accepts a path and shared options.
 Names are copied because `readdir` may reuse its storage on the next call. The
 array grows geometrically; its caller frees it even when reading fails.
 
-Long display uses `lstat` to preserve symbolic-link metadata, then `readlink` for
-the target. Target buffers grow as needed. Directory totals and rows currently
-read metadata separately; caching metadata can be introduced alongside time
-sorting. As with any live directory listing, files can change during traversal.
+Each `t_entry` owns a name, an optional full path, cached `struct stat` metadata
+and a validity flag. Collection, metadata loading, sorting and display are separate
+steps. `load_entries` performs one `lstat` per entry when metadata is needed for
+`-l`, `-t`, `-R` or operand classification. Simple directory listings without these
+options avoid metadata calls and full-path allocation entirely.
+
+The total, column widths, long display, time sorting and child-directory selection
+reuse this snapshot. The temporary timestamp array is no longer needed. Operand
+classification transfers ownership into file/directory arrays instead of copying
+names and reloading metadata. Source slots are cleared after transfer, and
+`free_entries` releases every owned name and path, including on errors.
+
+Long display still reads symbolic-link targets with `readlink`; traversed directories
+are checked again for ancestor cycles. Owner/group lookups and date formatting remain
+in the presentation layer. This cache uses more memory per entry in exchange for
+fewer filesystem calls and consistent metadata across output columns. It is not an
+atomic filesystem snapshot: files can still change or disappear during traversal.
+
+## Validation
+
+`python3 tests/test_ls.py` compares supported behavior with system `ls`, including
+all 32 option combinations, nested directories, symlinks, errors and nanosecond
+timestamp ties. Tests are local (the existing `.gitignore` excludes `tests/`).
+`FT_LS_BINARY` can select an alternate executable, for example a sanitizer build.
 
 ## Build
 

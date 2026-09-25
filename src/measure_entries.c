@@ -3,7 +3,6 @@
 #include <inttypes.h>
 #include <pwd.h>
 #include <stdio.h>
-#include <stdlib.h>
 
 static void	widen(int *width, int length)
 {
@@ -37,23 +36,16 @@ static void	measure_info(const struct stat *info, t_widths *widths)
 	widen(&widths->date, text_width(text));
 }
 
-int	measure_entries(const t_entries *entries, const char *directory,
-		t_widths *widths)
+void	measure_entries(const t_entries *entries, t_widths *widths)
 {
-	size_t		i;
-	char		*path;
-	struct stat	info;
+	size_t	i;
 
 	*widths = (t_widths){0};
 	i = 0;
 	while (i < entries->count)
 	{
-		path = entry_path(directory, entries->names[i++]);
-		if (path == NULL)
-			return (perror("ft_ls: path allocation"), 1);
-		if (lstat(path, &info) == 0)
-			measure_info(&info, widths);
-		free(path);
+		if (entries->items[i].valid)
+			measure_info(&entries->items[i].info, widths);
+		i++;
 	}
-	return (0);
 }

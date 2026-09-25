@@ -19,6 +19,7 @@ SRCS := $(SRC_DIR)/main.c \
 	$(SRC_DIR)/read_entries.c \
 	$(SRC_DIR)/store_entries.c \
 	$(SRC_DIR)/sort_entries.c \
+	$(SRC_DIR)/load_entries.c \
 	$(SRC_DIR)/print_entries.c
 OBJS := $(SRCS:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 

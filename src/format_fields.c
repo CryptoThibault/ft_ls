@@ -12,20 +12,23 @@ int	text_width(const char *text)
 	mbstate_t	state;
 	wchar_t		character;
 	size_t		length;
+	size_t		remaining;
 	int			width;
 	int			columns;
 
 	state = (mbstate_t){0};
 	width = 0;
+	remaining = strlen(text);
 	while (*text)
 	{
-		length = mbrtowc(&character, text, strlen(text), &state);
+		length = mbrtowc(&character, text, remaining, &state);
 		if (length == (size_t)-1 || length == (size_t)-2)
-			return (width + strlen(text));
+			return (width + remaining);
 		columns = wcwidth(character);
 		if (columns > 0)
 			width += columns;
 		text += length;
+		remaining -= length;
 	}
 	return (width);
 }

@@ -6,10 +6,10 @@
 
 static int	grow_entries(t_entries *entries)
 {
-	char	**names;
+	t_entry	*items;
 	size_t	capacity;
 
-	if (entries->capacity > SIZE_MAX / sizeof(*names) / 2)
+	if (entries->capacity > SIZE_MAX / sizeof(*items) / 2)
 	{
 		errno = ENOMEM;
 		return (1);
@@ -17,10 +17,10 @@ static int	grow_entries(t_entries *entries)
 	capacity = 16;
 	if (entries->capacity != 0)
 		capacity = entries->capacity * 2;
-	names = realloc(entries->names, capacity * sizeof(*names));
-	if (names == NULL)
+	items = realloc(entries->items, capacity * sizeof(*items));
+	if (items == NULL)
 		return (1);
-	entries->names = names;
+	entries->items = items;
 	entries->capacity = capacity;
 	return (0);
 }
@@ -35,7 +35,8 @@ int	add_entry(t_entries *entries, const char *name)
 	if (copy == NULL)
 		return (1);
 	strcpy(copy, name);
-	entries->names[entries->count++] = copy;
+	entries->items[entries->count] = (t_entry){0};
+	entries->items[entries->count++].name = copy;
 	return (0);
 }
 
@@ -45,7 +46,20 @@ void	free_entries(t_entries *entries)
 
 	i = 0;
 	while (i < entries->count)
-		free(entries->names[i++]);
-	free(entries->names);
+	{
+		free(entries->items[i].name);
+		free(entries->items[i].path);
+		i++;
+	}
+	free(entries->items);
 	*entries = (t_entries){0};
+}
+
+int	move_entry(t_entries *entries, t_entry *entry)
+{
+	if (entries->count == entries->capacity && grow_entries(entries) != 0)
+		return (1);
+	entries->items[entries->count++] = *entry;
+	*entry = (t_entry){0};
+	return (0);
 }

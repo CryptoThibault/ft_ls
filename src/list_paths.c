@@ -1,35 +1,26 @@
 #include "ft_ls.h"
 #include <stdio.h>
 
-static int	classify_paths(const t_entries *paths, const t_options *options,
-		t_entries *files, t_entries *directories)
+static int	classify_paths(t_entries *paths, t_entries *files,
+		t_entries *directories)
 {
 	size_t		i;
-	struct stat	info;
-	struct stat	target;
-	int			status;
 	t_entries	*destination;
 
 	i = 0;
-	status = 0;
 	while (i < paths->count)
 	{
-		if (lstat(paths->names[i], &info) == -1)
+		if (paths->items[i].valid)
 		{
-			perror(paths->names[i++]);
-			status = 2;
-			continue ;
+			destination = files;
+			if (S_ISDIR(paths->items[i].info.st_mode))
+				destination = directories;
+			if (move_entry(destination, &paths->items[i]) != 0)
+				return (perror("ft_ls: paths allocation"), 2);
 		}
-		if (!options->long_format && S_ISLNK(info.st_mode)
-			&& stat(paths->names[i], &target) == 0 && S_ISDIR(target.st_mode))
-			info = target;
-		destination = files;
-		if (S_ISDIR(info.st_mode))
-			destination = directories;
-		if (add_entry(destination, paths->names[i++]) != 0)
-			return (perror("ft_ls: paths allocation"), 2);
+		i++;
 	}
-	return (status);
+	return (0);
 }
 
 int	list_paths(t_entries *paths, const t_options *options)
@@ -43,15 +34,20 @@ int	list_paths(t_entries *paths, const t_options *options)
 
 	files = (t_entries){0};
 	directories = (t_entries){0};
-	sort_entries(paths);
-	status = classify_paths(paths, options, &files, &directories);
-	if (print_entries(&files, NULL, options) != 0 && status == 0)
+	status = 0;
+	if (load_entries(paths, NULL, options) != 0)
+		status = 2;
+	if (classify_paths(paths, &files, &directories) != 0)
+		status = 2;
+	sort_entries(&files, options);
+	sort_entries(&directories, options);
+	if (print_entries(&files, options) != 0 && status == 0)
 		status = 1;
 	i = 0;
 	printed = files.count > 0;
 	while (i < directories.count)
 	{
-		directory_status = list_directory(directories.names[i], options,
+		directory_status = list_directory(directories.items[i].path, options,
 				paths->count > 1 || options->recursive, &printed);
 		if (directory_status > status)
 			status = directory_status;
