@@ -122,13 +122,6 @@ in the presentation layer. This cache uses more memory per entry in exchange for
 fewer filesystem calls and consistent metadata across output columns. It is not an
 atomic filesystem snapshot: files can still change or disappear during traversal.
 
-## Validation
-
-`python3 tests/test_ls.py` compares supported behavior with system `ls`, including
-all 32 option combinations, nested directories, symlinks, errors and nanosecond
-timestamp ties. Tests are local (the existing `.gitignore` excludes `tests/`).
-`FT_LS_BINARY` can select an alternate executable, for example a sanitizer build.
-
 ## Build
 
 ```sh
